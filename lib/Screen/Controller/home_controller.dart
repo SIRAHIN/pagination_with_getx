@@ -7,7 +7,7 @@ import 'package:pagination_with_flutter/Models/Product%20Model/Product_model.dar
 import 'package:pagination_with_flutter/Service/network_caller.dart';
 
 class HomeController extends GetxController {
-  RxBool _isLoading = false.obs;
+  final RxBool _isLoading = false.obs;
 
   RxBool get isLoading => _isLoading;
 
@@ -41,29 +41,30 @@ class HomeController extends GetxController {
       if (initalLoding!) {
         _isLoading(true);
       }
-      print(offsetNumber.value);
+
       final response = await NetworkCaller().getRequest(
           'https://app.shukhimart.com.bd/api/v1/products/latest/?limit=$limit&offset=${offsetNumber.value}');
+
       if (response!.statusCode == 200) {
-        
         final jsonData = jsonDecode(response.body);
-       
-        // set value into model class //
+
+        // set value into Product model class //
         _productModel = ProductModel.fromJson(jsonData);
-       
+
         // hold up the api resopnse data list into a new List variable //
         var newDataList = _productModel.productsListData ?? [];
 
-        // Checking respose if the response data match the condition for assign data into list accepted //
+        // Checking  if the hold up list match the condition ; go ---> if statement //
         if (newDataList != [] &&
             newDataList.isNotEmpty &&
             (newDataList.length <= _productModel.limit!)) {
           // after getting the new prodect increase the offset value;
           offsetNumber.value++;
 
-          // after that added the new response data into the variable list data //
+          // after that added the hold up list data assign into the variable model list data //
           productDataList.addAll(newDataList);
         } else {
+          // of else there is no data left //
           hasMore(false);
         }
       }
