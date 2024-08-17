@@ -20,16 +20,7 @@ class ProductModel {
     }
   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['total_size'] = totalSize;
-    data['limit'] = limit;
-    data['offset'] = offset;
-    if (productsListData != null) {
-      data['products'] = productsListData!.map((v) => v.toJson()).toList();
-    }
-    return data;
-  }
+ 
 }
 
 

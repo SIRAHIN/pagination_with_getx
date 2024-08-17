@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:pagination_with_flutter/Models/Product%20Model/Product_list_data.dart';
 import 'package:pagination_with_flutter/Models/Product%20Model/Product_model.dart';
@@ -10,77 +11,66 @@ class HomeController extends GetxController {
 
   RxBool get isLoading => _isLoading;
 
-  // ProductModel _productModel = ProductModel();
+  ProductModel _productModel = ProductModel();
 
-  // ProductModel get productModelClass => _productModel;
+  ProductModel get productModelClass => _productModel;
 
-  var productDataList = <ProductsListData>[].obs;
+  List productDataList = <ProductsListData>[].obs;
 
   var hasMore = true.obs;
-  var offset = 0.obs;
+  var offsetNumber = 0.obs;
   final int limit = 10;
+
+  final ScrollController _scrollController = ScrollController();
+  ScrollController get scrollController => _scrollController;
 
   @override
   onInit() {
-    getProductData();
+    getProductData(initalLoding: true);
+    _scrollController.addListener(() async {
+      if (_scrollController.position.maxScrollExtent ==
+          _scrollController.offset) {
+        await getProductData(initalLoding: false);
+      }
+    });
     super.onInit();
   }
 
-  Future<void> getProductData() async {
-   productDataList.clear();
-    if (!hasMore.value) return;
-    _isLoading.value = true;
-
+  Future<void> getProductData({bool? initalLoding}) async {
     try {
-      final response = await NetworkCaller().getRequest(
-          'https://app.shukhimart.com.bd/api/v1/products/latest/?limit=$limit&offset=${offset.value}');
-      if (response?.statusCode == 200) {
-        
-        List<dynamic> data = jsonDecode(response!.body)['products'];
-        List<ProductsListData> newPost =
-            data.map((json) => ProductsListData.fromJson(json)).toList();
-        if (newPost.isEmpty) {
-          hasMore(false);
-        } else {
-          productDataList.addAll(newPost);
-          offset.value += limit;
-        }
-      } else {
-        throw Exception('Failed to load posts');
+      if (initalLoding!) {
+        _isLoading(true);
       }
-    } catch (exception) {
-      print(exception);
+      print(offsetNumber.value);
+      final response = await NetworkCaller().getRequest(
+          'https://app.shukhimart.com.bd/api/v1/products/latest/?limit=$limit&offset=${offsetNumber.value}');
+      if (response!.statusCode == 200) {
+        
+        final jsonData = jsonDecode(response.body);
+       
+        // set value into model class //
+        _productModel = ProductModel.fromJson(jsonData);
+       
+        // hold up the api resopnse data list into a new List variable //
+        var newDataList = _productModel.productsListData ?? [];
+
+        // Checking respose if the response data match the condition for assign data into list accepted //
+        if (newDataList != [] &&
+            newDataList.isNotEmpty &&
+            (newDataList.length <= _productModel.limit!)) {
+          // after getting the new prodect increase the offset value;
+          offsetNumber.value++;
+
+          // after that added the new response data into the variable list data //
+          productDataList.addAll(newDataList);
+        } else {
+          hasMore(false);
+        }
+      }
+    } catch (ex) {
+      print(ex.toString());
     } finally {
-      isLoading(false);
+      _isLoading(false);
     }
   }
 }
-
-  //  if (!hasMore.value) return;
-
-  //   isLoading(true);
-  //   try {
-  //     final response = await http.get(
-  //       Uri.parse('https://jsonplaceholder.typicode.com/posts?_page=${page.value}&_limit=10'),
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       List<dynamic> data = jsonDecode(response.body);
-  //       List<Post> newPosts = data.map((json) => Post.fromJson(json)).toList();
-        
-  //       if (newPosts.isEmpty) {
-  //         hasMore(false);
-  //       } else {
-  //         posts.addAll(newPosts);
-  //         page.value++;
-  //       }
-  //     } else {
-  //       throw Exception('Failed to load posts');
-  //     }
-  //   } catch (e) {
-  //     // Handle error
-  //     print(e);
-  //   } finally {
-  //     isLoading(false);
-  //   }
-  // }
